@@ -302,13 +302,18 @@ struct	btSparseSdf
 			int x,y,z;
 			void* p;
 		};
-
 		btS myset;
 
-		myset.x=x;myset.y=y;myset.z=z;myset.p=(void*)shape;
+		// manually fill the 'myset' memory block in order to avoid potential padding before *p in the struct memory layout (pointer alignment) - if any padding occurs there will simply be unused bytes at the end of the struct
+		int* pmyset = (int*)&myset;
+		*pmyset = x; ++pmyset;
+		*pmyset = y; ++pmyset;
+		*pmyset = z; ++pmyset;
+		*(void**)pmyset = (void*)shape;
+
 		const void* ptr = &myset;
 
-		unsigned int result = HsiehHash<sizeof(btS)/4> (ptr);
+		unsigned int result = HsiehHash<(3*sizeof(int) + sizeof(void*))/4> (ptr);
 
 
 		return result;
