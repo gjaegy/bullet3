@@ -49,6 +49,7 @@ inline int	b3GetVersion()
 
 			#define B3_FORCE_INLINE inline
 			#define B3_ATTRIBUTE_ALIGNED16(a) a
+			#define B3_ATTRIBUTE_ALIGNED32(a) a
 			#define B3_ATTRIBUTE_ALIGNED64(a) a
 			#define B3_ATTRIBUTE_ALIGNED128(a) a
 		#else
@@ -60,6 +61,7 @@ inline int	b3GetVersion()
 
 			#define B3_FORCE_INLINE __forceinline
 			#define B3_ATTRIBUTE_ALIGNED16(a) __declspec(align(16)) a
+			#define B3_ATTRIBUTE_ALIGNED32(a) __declspec(align(32)) a
 			#define B3_ATTRIBUTE_ALIGNED64(a) __declspec(align(64)) a
 			#define B3_ATTRIBUTE_ALIGNED128(a) __declspec (align(128)) a
 		#ifdef _XBOX
@@ -82,6 +84,22 @@ inline int	b3GetVersion()
 			//you can manually enable this line or set it in the build system for a bit of performance gain (a few percent, dependent on usage)
 			//#define B3_USE_SSE_IN_API
 			#endif //B3_USE_SSE
+			#include <emmintrin.h>
+	#endif
+#endif
+
+#if (defined (_WIN32) && (_MSC_VER) && _MSC_VER >= 1400) && (defined (B3_USE_DOUBLE_PRECISION))
+	#if (defined (_M_IX86) || defined (_M_X64))
+			#define B3_USE_AVX
+			#ifdef B3_USE_AVX
+			//B3_USE_SSE_IN_API is disabled under Windows by default, because 
+			//it makes it harder to integrate Bullet into your application under Windows 
+			//(structured embedding Bullet structs/classes need to be 16-byte aligned)
+			//with relatively little performance gain
+			//If you are not embedded Bullet data in your classes, or make sure that you align those classes on 16-byte boundaries
+			//you can manually enable this line or set it in the build system for a bit of performance gain (a few percent, dependent on usage)
+			//#define B3_USE_SSE_IN_API
+			#endif //B3_USE_AVX
 			#include <emmintrin.h>
 	#endif
 #endif
@@ -112,6 +130,7 @@ inline int	b3GetVersion()
 #if defined	(__CELLOS_LV2__)
 		#define B3_FORCE_INLINE inline __attribute__((always_inline))
 		#define B3_ATTRIBUTE_ALIGNED16(a) a __attribute__ ((aligned (16)))
+		#define B3_ATTRIBUTE_ALIGNED32(a) a __attribute__ ((aligned (32)))
 		#define B3_ATTRIBUTE_ALIGNED64(a) a __attribute__ ((aligned (64)))
 		#define B3_ATTRIBUTE_ALIGNED128(a) a __attribute__ ((aligned (128)))
 		#ifndef assert
@@ -141,6 +160,7 @@ inline int	b3GetVersion()
 
 		#define B3_FORCE_INLINE __inline
 		#define B3_ATTRIBUTE_ALIGNED16(a) a __attribute__ ((aligned (16)))
+		#define B3_ATTRIBUTE_ALIGNED32(a) a __attribute__ ((aligned (32)))
 		#define B3_ATTRIBUTE_ALIGNED64(a) a __attribute__ ((aligned (64)))
 		#define B3_ATTRIBUTE_ALIGNED128(a) a __attribute__ ((aligned (128)))
 		#ifndef assert
@@ -193,6 +213,7 @@ inline int	b3GetVersion()
 	#define B3_FORCE_INLINE inline __attribute__ ((always_inline))
 ///@todo: check out alignment methods for other platforms/compilers
 	#define B3_ATTRIBUTE_ALIGNED16(a) a __attribute__ ((aligned (16)))
+	#define B3_ATTRIBUTE_ALIGNED32(a) a __attribute__ ((aligned (32)))
 	#define B3_ATTRIBUTE_ALIGNED64(a) a __attribute__ ((aligned (64)))
 	#define B3_ATTRIBUTE_ALIGNED128(a) a __attribute__ ((aligned (128)))
 	#ifndef assert
@@ -227,6 +248,7 @@ inline int	b3GetVersion()
 		#define B3_FORCE_INLINE inline
 		///@todo: check out alignment methods for other platforms/compilers
 		#define B3_ATTRIBUTE_ALIGNED16(a) a __attribute__ ((aligned (16)))
+		#define B3_ATTRIBUTE_ALIGNED32(a) a __attribute__ ((aligned (32)))
 		#define B3_ATTRIBUTE_ALIGNED64(a) a __attribute__ ((aligned (64)))
 		#define B3_ATTRIBUTE_ALIGNED128(a) a __attribute__ ((aligned (128)))
 		///#define B3_ATTRIBUTE_ALIGNED16(a) a
@@ -268,6 +290,10 @@ typedef float b3Scalar;
 #ifdef B3_USE_SSE
 typedef __m128 b3SimdFloat4;
 #endif//B3_USE_SSE
+
+#ifdef B3_USE_AVX
+typedef __m256d b3SimdFloat4;
+#endif//B3_USE_AVX
 
 #if defined B3_USE_SSE_IN_API && defined (B3_USE_SSE)
 #ifdef _WIN32
@@ -314,6 +340,57 @@ inline __m128 operator * (const __m128 A, const __m128 B)
 #define b3Assign128(r0,r1,r2,r3) (__m128){r0,r1,r2,r3}
 #endif//_WIN32
 #endif //B3_USE_SSE_IN_API
+
+
+
+#if defined B3_USE_SSE_IN_API && defined (B3_USE_AVX)
+#ifdef _WIN32
+
+#ifndef B3_NAN
+static int64_t b3NanMask = 0x7FF0000000000001;
+#define B3_NAN (*(double*)&b3NanMask)
+#endif
+
+#ifndef B3_INFINITY_MASK
+static  int64_t b3InfinityMask = 0x7FF0000000000000;
+#define B3_INFINITY_MASK (*(double*)&b3InfinityMask)
+#endif
+
+inline __m256d operator + (const __m256d A, const __m256d B)
+{
+	return _mm256_add_pd(A, B);
+}
+
+inline __m256d operator - (const __m256d A, const __m256d B)
+{
+	return _mm256_sub_pd(A, B);
+}
+
+inline __m256d operator * (const __m256d A, const __m256d B)
+{
+	return _mm256_mul_pd(A, B);
+}
+
+#define b3CastdTo256i(a) (_mm256_castpd_si256(a))
+//#define b3CastdTo256d(a) (_mm256_castps_pd(a))
+#define b3CastiTo256d(a) (_mm256_castsi256_pd(a))
+//#define b3CastdTo128f(a) (_mm256_castpd_ps(a))
+//#define b3CastdTo128i(a) (_mm256_castpd_si256(a))
+//#define b3Assign128(r0,r1,r2,r3) _mm256_setr_ps(r0,r1,r2,r3)
+
+#else//_WIN32
+
+#define b3CastdTo256i(a) ((__m256i)(a))
+//#define b3CastfTo128d(a) ((__m128d)(a))
+#define b3CastiTo256d(a)  ((__m256d) (a))
+//#define b3CastdTo128f(a) ((__m128) (a))
+//#define b3CastdTo128i(a) ((__m128i)(a))
+//#define b3Assign128(r0,r1,r2,r3) (__m128){r0,r1,r2,r3}
+#endif//_WIN32
+#endif //B3_USE_SSE_IN_API
+
+
+
 
 #ifdef B3_USE_NEON
 #include <arm_neon.h>

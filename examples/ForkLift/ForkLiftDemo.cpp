@@ -595,7 +595,7 @@ void ForkLiftDemo::renderScene()
 
 	
 
-	ATTRIBUTE_ALIGNED16(btScalar) m[16];
+	ATTRIBUTE_ALIGNED_DEFAULT(btScalar) m[16];
 	int i;
 
 	btVector3 wheelColor(1,0,0);

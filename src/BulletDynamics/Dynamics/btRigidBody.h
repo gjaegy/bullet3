@@ -100,7 +100,7 @@ class btRigidBody  : public btCollisionObject
 
 protected:
 
-	ATTRIBUTE_ALIGNED16(btVector3		m_deltaLinearVelocity);
+	ATTRIBUTE_ALIGNED_DEFAULT(btVector3		m_deltaLinearVelocity);
 	btVector3		m_deltaAngularVelocity;
 	btVector3		m_angularFactor;
 	btVector3		m_invMass;

@@ -24,7 +24,7 @@ subject to the following restrictions:
 typedef sce::PhysicsEffects::PfxConstraintRow btConstraintRow;
 #else
 	// Don't change following order of parameters
-	ATTRIBUTE_ALIGNED16(struct) btConstraintRow {
+	ATTRIBUTE_ALIGNED_DEFAULT(struct) btConstraintRow {
 		btScalar m_normal[3];
 		btScalar m_rhs;
 		btScalar m_jacDiagInv;

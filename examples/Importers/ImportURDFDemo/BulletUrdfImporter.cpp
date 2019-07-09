@@ -43,7 +43,7 @@ struct MyTexture
 };
 
 
-ATTRIBUTE_ALIGNED16(struct) BulletURDFInternalData
+ATTRIBUTE_ALIGNED_DEFAULT(struct) BulletURDFInternalData
 {
 	BT_DECLARE_ALIGNED_ALLOCATOR();
 

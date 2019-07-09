@@ -158,7 +158,7 @@ const btMatrix3x3 & mat, const btVector3 & vec3, int colindex)
 
 
 //!  Class for transforming a model1 to the space of model0
-ATTRIBUTE_ALIGNED16	(class) BT_BOX_BOX_TRANSFORM_CACHE
+ATTRIBUTE_ALIGNED_DEFAULT	(class) BT_BOX_BOX_TRANSFORM_CACHE
 {
 public:
     btVector3  m_T1to0;//!< Transforms translation of model1 to model 0
@@ -226,7 +226,7 @@ public:
 #define BOX_PLANE_EPSILON 0.000001f
 
 //! Axis aligned box
-ATTRIBUTE_ALIGNED16	(class) btAABB
+ATTRIBUTE_ALIGNED_DEFAULT	(class) btAABB
 {
 public:
 	btVector3 m_min;

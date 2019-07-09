@@ -30,6 +30,7 @@ subject to the following restrictions:
 // Implementation profiles
 #define B3_DBVT_IMPL_GENERIC		0	// Generic implementation	
 #define B3_DBVT_IMPL_SSE			1	// SSE
+#define B3_DBVT_IMPL_AVX			2	// AVX
 
 // Template implementation of ICollide
 #ifdef _WIN32
@@ -59,18 +60,27 @@ subject to the following restrictions:
 //SSE gives errors on a MSVC 7.1
 #if defined (B3_USE_SSE) //&& defined (_WIN32)
 #define B3_DBVT_SELECT_IMPL		B3_DBVT_IMPL_SSE
-#define B3_DBVT_MERGE_IMPL			B3_DBVT_IMPL_SSE
-#define B3_DBVT_INT0_IMPL			B3_DBVT_IMPL_SSE
+#define B3_DBVT_MERGE_IMPL		B3_DBVT_IMPL_SSE
+#define B3_DBVT_INT0_IMPL		B3_DBVT_IMPL_SSE
+#elif defined (B3_USE_AVX) //&& defined (_WIN32)
+#define B3_DBVT_SELECT_IMPL		B3_DBVT_IMPL_AVX
+#define B3_DBVT_MERGE_IMPL		B3_DBVT_IMPL_AVX
+#define B3_DBVT_INT0_IMPL		B3_DBVT_IMPL_AVX
 #else
 #define B3_DBVT_SELECT_IMPL		B3_DBVT_IMPL_GENERIC
-#define B3_DBVT_MERGE_IMPL			B3_DBVT_IMPL_GENERIC
-#define B3_DBVT_INT0_IMPL			B3_DBVT_IMPL_GENERIC
+#define B3_DBVT_MERGE_IMPL		B3_DBVT_IMPL_GENERIC
+#define B3_DBVT_INT0_IMPL		B3_DBVT_IMPL_GENERIC
 #endif
 
 #if	(B3_DBVT_SELECT_IMPL==B3_DBVT_IMPL_SSE)||	\
 	(B3_DBVT_MERGE_IMPL==B3_DBVT_IMPL_SSE)||	\
 	(B3_DBVT_INT0_IMPL==B3_DBVT_IMPL_SSE)
 #include <emmintrin.h>
+#endif
+#if	(B3_DBVT_SELECT_IMPL==B3_DBVT_IMPL_AVX)||	\
+	(B3_DBVT_MERGE_IMPL==B3_DBVT_IMPL_AVX)||	\
+	(B3_DBVT_INT0_IMPL==B3_DBVT_IMPL_AVX)
+#include <immintrin.h>
 #endif
 
 //
@@ -529,6 +539,15 @@ B3_DBVT_INLINE bool		b3Intersect(	const b3DbvtAabbMm& a,
     const int*	pu((const int*)&rt);
 #endif
 	return((pu[0]|pu[1]|pu[2])==0);
+#elif B3_DBVT_INT0_IMPL == B3_DBVT_IMPL_AVX
+	const __m256d	rt(_mm256_or_pd(_mm256_cmp_pd(_mm256_load_pd(b.mx), _mm256_load_pd(a.mi), _CMP_LT_OS),
+		_mm256_cmp_pd(_mm256_load_pd(a.mx), _mm256_load_pd(b.mi), _CMP_LT_OS)));
+#if defined (_WIN32)
+	const __int64* pu((const __int64*)& rt);
+#else
+	const long long int* pu((const long long int*)& rt);
+#endif
+	return((pu[0] | pu[1] | pu[2]) == 0);
 #else
 	return(	(a.mi.x<=b.mx.x)&&
 		(a.mx.x>=b.mi.x)&&
@@ -575,6 +594,7 @@ B3_DBVT_INLINE int			b3Select(	const b3DbvtAabbMm& o,
 							   const b3DbvtAabbMm& a,
 							   const b3DbvtAabbMm& b)
 {
+/* TODO_AVX */
 #if	B3_DBVT_SELECT_IMPL == B3_DBVT_IMPL_SSE
     
 #if defined (_WIN32)
@@ -663,6 +683,15 @@ B3_DBVT_INLINE void		b3Merge(	const b3DbvtAabbMm& a,
 	amx=_mm_max_ps(amx,bmx);
 	_mm_store_ps(r.mi,ami);
 	_mm_store_ps(r.mx,amx);
+#elif B3_DBVT_MERGE_IMPL==B3_DBVT_IMPL_AVX
+	__m256d	ami(_mm256_load_pd(a.mi));
+	__m256d	amx(_mm256_load_pd(a.mx));
+	__m256d	bmi(_mm256_load_pd(b.mi));
+	__m256d	bmx(_mm256_load_pd(b.mx));
+	ami = _mm256_min_pd(ami, bmi);
+	amx = _mm256_max_pd(amx, bmx);
+	_mm256_store_pd(r.mi, ami);
+	_mm256_store_pd(r.mx, amx);
 #else
 	for(int i=0;i<3;++i)
 	{
@@ -1261,6 +1290,7 @@ inline void		b3DynamicBvh::collideTU(	const b3DbvtNode* root,
 #undef B3_DBVT_CHECKTYPE
 #undef B3_DBVT_IMPL_GENERIC
 #undef B3_DBVT_IMPL_SSE
+#undef B3_DBVT_IMPL_AVX
 #undef B3_DBVT_USE_INTRINSIC_SSE
 #undef B3_DBVT_SELECT_IMPL
 #undef B3_DBVT_MERGE_IMPL

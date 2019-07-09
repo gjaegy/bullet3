@@ -293,7 +293,7 @@ void	btDbvtBroadphase::aabbTest(const btVector3& aabbMin,const btVector3& aabbMa
 {
 	BroadphaseAabbTester callback(aabbCallback);
 
-	const ATTRIBUTE_ALIGNED16(btDbvtVolume)	bounds=btDbvtVolume::FromMM(aabbMin,aabbMax);
+	const ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	bounds=btDbvtVolume::FromMM(aabbMin,aabbMax);
 		//process all children, that overlap with  the given AABB bounds
 	m_sets[0].collideTV(m_sets[0].m_root,bounds,callback);
 	m_sets[1].collideTV(m_sets[1].m_root,bounds,callback);
@@ -309,7 +309,7 @@ void							btDbvtBroadphase::setAabb(		btBroadphaseProxy* absproxy,
 														  btDispatcher* /*dispatcher*/)
 {
 	btDbvtProxy*						proxy=(btDbvtProxy*)absproxy;
-	ATTRIBUTE_ALIGNED16(btDbvtVolume)	aabb=btDbvtVolume::FromMM(aabbMin,aabbMax);
+	ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	aabb=btDbvtVolume::FromMM(aabbMin,aabbMax);
 #if DBVT_BP_PREVENTFALSEUPDATE
 	if(NotEqual(aabb,proxy->leaf->volume))
 #endif
@@ -377,7 +377,7 @@ void							btDbvtBroadphase::setAabbForceUpdate(		btBroadphaseProxy* absproxy,
 														  btDispatcher* /*dispatcher*/)
 {
 	btDbvtProxy*						proxy=(btDbvtProxy*)absproxy;
-	ATTRIBUTE_ALIGNED16(btDbvtVolume)	aabb=btDbvtVolume::FromMM(aabbMin,aabbMax);
+	ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	aabb=btDbvtVolume::FromMM(aabbMin,aabbMax);
 	bool	docollide=false;
 	if(proxy->stage==STAGECOUNT)
 	{/* fixed -> dynamic set	*/ 
@@ -558,7 +558,7 @@ void							btDbvtBroadphase::collide(btDispatcher* dispatcher)
 			btDbvt::collideTV(m_sets[1].m_root,current->aabb,collider);
 #endif
 			m_sets[0].remove(current->leaf);
-			ATTRIBUTE_ALIGNED16(btDbvtVolume)	curAabb=btDbvtVolume::FromMM(current->m_aabbMin,current->m_aabbMax);
+			ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	curAabb=btDbvtVolume::FromMM(current->m_aabbMin,current->m_aabbMax);
 			current->leaf	=	m_sets[1].insert(curAabb,current);
 			current->stage	=	STAGECOUNT;	
 			current			=	next;
@@ -641,7 +641,7 @@ const btOverlappingPairCache*	btDbvtBroadphase::getOverlappingPairCache() const
 void							btDbvtBroadphase::getBroadphaseAabb(btVector3& aabbMin,btVector3& aabbMax) const
 {
 
-	ATTRIBUTE_ALIGNED16(btDbvtVolume)	bounds;
+	ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	bounds;
 
 	if(!m_sets[0].empty())
 		if(!m_sets[1].empty())	Merge(	m_sets[0].m_root->volume,

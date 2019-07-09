@@ -31,7 +31,7 @@ subject to the following restrictions:
  * Some issues under PS3 Linux with IBM 2.1 SDK, gcc compiler prevent from using aligned quadword.
  */
 #ifndef USE_LIBSPE2
-ATTRIBUTE_ALIGNED16(class) btQuadWord
+ATTRIBUTE_ALIGNED_DEFAULT(class) btQuadWord
 #else
 class btQuadWord
 #endif
@@ -51,7 +51,7 @@ public:
 protected:
 #else //__CELLOS_LV2__ __SPU__
 
-#if defined(BT_USE_SSE) || defined(BT_USE_NEON) 
+#if defined(BT_USE_SSE) || defined(BT_USE_AVX)  || defined(BT_USE_NEON) 
 	union {
 		btSimdFloat4 mVec128;
 		btScalar	m_floats[4];
@@ -73,7 +73,7 @@ public:
 
 	public:
   
-#if (defined(BT_USE_SSE_IN_API) && defined(BT_USE_SSE)) || defined(BT_USE_NEON)
+#if (defined(BT_USE_SSE_IN_API) && (defined(BT_USE_SSE) || defined(BT_USE_AVX))) || defined(BT_USE_NEON)
 
 	// Set Vector 
 	SIMD_FORCE_INLINE btQuadWord(const btSimdFloat4 vec)
@@ -131,6 +131,8 @@ public:
 	{
 #ifdef BT_USE_SSE
         return (0xf == _mm_movemask_ps((__m128)_mm_cmpeq_ps(mVec128, other.mVec128)));
+#elif defined(BT_USE_AVX)
+		return (0xf == _mm256_movemask_pd((__m256d)_mm256_cmp_pd(mVec128, other.mVec128, _CMP_EQ_OQ)));
 #else 
 		return ((m_floats[3]==other.m_floats[3]) && 
                 (m_floats[2]==other.m_floats[2]) && 
@@ -211,6 +213,8 @@ public:
 		{
         #ifdef BT_USE_SSE
             mVec128 = _mm_max_ps(mVec128, other.mVec128);
+        #elif defined(BT_USE_AVX)
+			mVec128 = _mm256_max_pd(mVec128, other.mVec128);
         #elif defined(BT_USE_NEON)
             mVec128 = vmaxq_f32(mVec128, other.mVec128);
         #else
@@ -227,8 +231,10 @@ public:
 		{
         #ifdef BT_USE_SSE
             mVec128 = _mm_min_ps(mVec128, other.mVec128);
+        #elif defined(BT_USE_AVX)
+			mVec128 = _mm256_min_pd(mVec128, other.mVec128);
         #elif defined(BT_USE_NEON)
-            mVec128 = vminq_f32(mVec128, other.mVec128);
+           mVec128 = vminq_f32(mVec128, other.mVec128);
         #else
         	btSetMin(m_floats[0], other.m_floats[0]);
 			btSetMin(m_floats[1], other.m_floats[1]);

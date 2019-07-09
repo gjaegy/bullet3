@@ -786,7 +786,7 @@ setVolumeMass(volume*density/6);
 void			btSoftBody::transform(const btTransform& trs)
 {
 	const btScalar	margin=getCollisionShape()->getMargin();
-	ATTRIBUTE_ALIGNED16(btDbvtVolume)	vol;
+	ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	vol;
 	
 	for(int i=0,ni=m_nodes.size();i<ni;++i)
 	{
@@ -827,7 +827,7 @@ void			btSoftBody::scale(const btVector3& scl)
 {
 
 	const btScalar	margin=getCollisionShape()->getMargin();
-	ATTRIBUTE_ALIGNED16(btDbvtVolume)	vol;
+	ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	vol;
 	
 	for(int i=0,ni=m_nodes.size();i<ni;++i)
 	{
@@ -1794,7 +1794,7 @@ void			btSoftBody::predictMotion(btScalar dt)
 	/* Bounds				*/ 
 	updateBounds();	
 	/* Nodes				*/ 
-	ATTRIBUTE_ALIGNED16(btDbvtVolume)	vol;
+	ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	vol;
 	for(i=0,ni=m_nodes.size();i<ni;++i)
 	{
 		Node&	n=m_nodes[i];
@@ -2637,7 +2637,7 @@ void					btSoftBody::updateClusters()
 					mi.setMin(c.m_nodes[j]->m_x);
 					mx.setMax(c.m_nodes[j]->m_x);
 				}			
-				ATTRIBUTE_ALIGNED16(btDbvtVolume)	bounds=btDbvtVolume::FromMM(mi,mx);
+				ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	bounds=btDbvtVolume::FromMM(mi,mx);
 				if(c.m_leaf)
 					m_cdbvt.update(c.m_leaf,bounds,c.m_lv*m_sst.sdt*3,m_sst.radmrg);
 				else
@@ -3218,7 +3218,7 @@ void			btSoftBody::defaultCollisionHandler(const btCollisionObjectWrapper* pcoWr
 			const btScalar		basemargin=getCollisionShape()->getMargin();
 			btVector3			mins;
 			btVector3			maxs;
-			ATTRIBUTE_ALIGNED16(btDbvtVolume)		volume;
+			ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)		volume;
 			pcoWrap->getCollisionShape()->getAabb(	pcoWrap->getWorldTransform(),
 				mins,
 				maxs);

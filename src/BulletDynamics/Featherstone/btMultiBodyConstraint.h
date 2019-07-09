@@ -39,7 +39,7 @@ struct btMultiBodyJacobianData
 };
 
 
-ATTRIBUTE_ALIGNED16(class) btMultiBodyConstraint
+ATTRIBUTE_ALIGNED_DEFAULT(class) btMultiBodyConstraint
 {
 protected:
 

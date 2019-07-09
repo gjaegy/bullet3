@@ -276,7 +276,7 @@ This brings support for limit parameters and motors. </li>
 </ul>
 
 */
-ATTRIBUTE_ALIGNED16(class) btGeneric6DofConstraint : public btTypedConstraint
+ATTRIBUTE_ALIGNED_DEFAULT(class) btGeneric6DofConstraint : public btTypedConstraint
 {
 protected:
 

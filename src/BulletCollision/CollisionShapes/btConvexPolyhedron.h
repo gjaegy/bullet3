@@ -34,7 +34,7 @@ struct btFace
 };
 
 
-ATTRIBUTE_ALIGNED16(class) btConvexPolyhedron
+ATTRIBUTE_ALIGNED_DEFAULT(class) btConvexPolyhedron
 {
 	public:
 		

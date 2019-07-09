@@ -774,8 +774,8 @@ void TinyRendererVisualShapeConverter::clearBuffers(TGAColor& clearColor)
 void TinyRendererVisualShapeConverter::render() 
 {
 
-    ATTRIBUTE_ALIGNED16(float viewMat[16]);
-    ATTRIBUTE_ALIGNED16(float projMat[16]);
+    ATTRIBUTE_ALIGNED_DEFAULT(float viewMat[16]);
+    ATTRIBUTE_ALIGNED_DEFAULT(float projMat[16]);
 
     m_data->m_camera.getCameraProjectionMatrix(projMat);
     m_data->m_camera.getCameraViewMatrix(viewMat);
@@ -800,7 +800,7 @@ void TinyRendererVisualShapeConverter::render(const float viewMat[16], const flo
 	m_data->m_camera.setCameraFrustumFar(far);
 		
     
-    ATTRIBUTE_ALIGNED16(btScalar modelMat[16]);
+    ATTRIBUTE_ALIGNED_DEFAULT(btScalar modelMat[16]);
     
     
     btVector3 lightDirWorld(-5,200,-40);

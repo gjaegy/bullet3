@@ -68,7 +68,7 @@ subject to the following restrictions:
 
   For usage and testing see the TerrainDemo.
  */
-ATTRIBUTE_ALIGNED16(class) btHeightfieldTerrainShape : public btConcaveShape
+ATTRIBUTE_ALIGNED_DEFAULT(class) btHeightfieldTerrainShape : public btConcaveShape
 {
 protected:
 	btVector3	m_localAabbMin;

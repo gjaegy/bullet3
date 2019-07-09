@@ -26,7 +26,7 @@ class btDispatcher;
 #include "btCollisionCreateFunc.h"
 
 ///For each triangle in the concave mesh that overlaps with the AABB of a convex (m_convexProxy), processTriangle is called.
-ATTRIBUTE_ALIGNED16(class)  btConvexTriangleCallback : public btTriangleCallback
+ATTRIBUTE_ALIGNED_DEFAULT(class)  btConvexTriangleCallback : public btTriangleCallback
 {
 
 	btVector3	m_aabbMin;
@@ -79,7 +79,7 @@ int	m_triangleCount;
 
 
 /// btConvexConcaveCollisionAlgorithm  supports collision between convex shapes and (concave) trianges meshes.
-ATTRIBUTE_ALIGNED16(class)  btConvexConcaveCollisionAlgorithm  : public btActivatingCollisionAlgorithm
+ATTRIBUTE_ALIGNED_DEFAULT(class)  btConvexConcaveCollisionAlgorithm  : public btActivatingCollisionAlgorithm
 {
 
 	btConvexTriangleCallback m_btConvexTriangleCallback;

@@ -232,7 +232,7 @@ public:
 		int						m_battach:1;	// Attached
 	};
 	/* Link			*/ 
-	ATTRIBUTE_ALIGNED16(struct)	Link : Feature
+	ATTRIBUTE_ALIGNED_DEFAULT(struct)	Link : Feature
 	{
 		btVector3				m_c3;			// gradient
 		Node*					m_n[2];			// Node pointers

@@ -379,9 +379,9 @@ void	TinyRendererSetup::renderScene()
         }
 
 
-        ATTRIBUTE_ALIGNED16(btScalar modelMat2[16]);
-        ATTRIBUTE_ALIGNED16(float viewMat[16]);
-        ATTRIBUTE_ALIGNED16(float projMat[16]);
+        ATTRIBUTE_ALIGNED_DEFAULT(btScalar modelMat2[16]);
+        ATTRIBUTE_ALIGNED_DEFAULT(float viewMat[16]);
+        ATTRIBUTE_ALIGNED_DEFAULT(float projMat[16]);
         CommonRenderInterface* render = this->m_app->m_renderer;
         render->getActiveCamera()->getCameraViewMatrix(viewMat);
         render->getActiveCamera()->getCameraProjectionMatrix(projMat);

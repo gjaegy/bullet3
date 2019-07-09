@@ -34,7 +34,7 @@ subject to the following restrictions:
 
 #ifdef BT_USE_SSE
 
-//const __m128 ATTRIBUTE_ALIGNED16(vOnes) = {1.0f, 1.0f, 1.0f, 1.0f};
+//const __m128 ATTRIBUTE_ALIGNED_DEFAULT(vOnes) = {1.0f, 1.0f, 1.0f, 1.0f};
 #define vOnes (_mm_set_ps(1.0f, 1.0f, 1.0f, 1.0f))
 
 #endif
@@ -46,8 +46,16 @@ subject to the following restrictions:
 
 #elif defined(BT_USE_NEON)
 
-const btSimdFloat4 ATTRIBUTE_ALIGNED16(vQInv) = {-0.0f, -0.0f, -0.0f, +0.0f};
-const btSimdFloat4 ATTRIBUTE_ALIGNED16(vPPPM) = {+0.0f, +0.0f, +0.0f, -0.0f};
+const btSimdFloat4 ATTRIBUTE_ALIGNED_DEFAULT(vQInv) = {-0.0f, -0.0f, -0.0f, +0.0f};
+const btSimdFloat4 ATTRIBUTE_ALIGNED_DEFAULT(vPPPM) = {+0.0f, +0.0f, +0.0f, -0.0f};
+
+#endif
+
+#ifdef BT_USE_AVX
+
+const btSimdFloat4 ATTRIBUTE_ALIGNED32(vOnes) = { 1.0, 1.0, 1.0, 1.0 };
+const btSimdFloat4 ATTRIBUTE_ALIGNED32(vQInv) = { -0.0, -0.0, -0.0, +0.0 };
+const btSimdFloat4 ATTRIBUTE_ALIGNED32(vPPPM) = { +0.0, +0.0, +0.0, -0.0 };
 
 #endif
 
@@ -57,7 +65,7 @@ public:
   /**@brief No initialization constructor */
 	btQuaternion() {}
 
-#if (defined(BT_USE_SSE_IN_API) && defined(BT_USE_SSE))|| defined(BT_USE_NEON) 
+#if (defined(BT_USE_SSE_IN_API) && (defined(BT_USE_SSE) || defined(BT_USE_AVX)))|| defined(BT_USE_NEON) 
 	// Set Vector 
 	SIMD_FORCE_INLINE btQuaternion(const btSimdFloat4 vec)
 	{
@@ -185,6 +193,8 @@ public:
 	{
 #if defined (BT_USE_SSE_IN_API) && defined (BT_USE_SSE)
 		mVec128 = _mm_add_ps(mVec128, q.mVec128);
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		mVec128 = _mm256_add_pd(mVec128, q.mVec128);
 #elif defined(BT_USE_NEON)
 		mVec128 = vaddq_f32(mVec128, q.mVec128);
 #else	
@@ -202,6 +212,8 @@ public:
 	{
 #if defined (BT_USE_SSE_IN_API) && defined (BT_USE_SSE)
 		mVec128 = _mm_sub_ps(mVec128, q.mVec128);
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		mVec128 = _mm256_sub_pd(mVec128, q.mVec128);
 #elif defined(BT_USE_NEON)
 		mVec128 = vsubq_f32(mVec128, q.mVec128);
 #else	
@@ -221,6 +233,9 @@ public:
 		__m128	vs = _mm_load_ss(&s);	//	(S 0 0 0)
 		vs = bt_pshufd_ps(vs, 0);	//	(S S S S)
 		mVec128 = _mm_mul_ps(mVec128, vs);
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		__m256d vs = _mm256_set1_pd(s);	//	(S S S S)
+		mVec128 = _mm256_mul_pd(mVec128, vs);
 #elif defined(BT_USE_NEON)
 		mVec128 = vmulq_n_f32(mVec128, s);
 #else
@@ -262,6 +277,32 @@ public:
 		mVec128 = mVec128 - B1;	//	AB03 = AB0 - AB3 
 		A1 = _mm_xor_ps(A1, vPPPM);	//	change sign of the last element
 		mVec128 = mVec128+ A1;	//	AB03 + AB12
+
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		__m256d vQ2 = q.get128();
+
+		__m256d A1 = bt_pshufd_pd(mVec128, BT_SHUFFLE(0, 1, 2, 0));
+		__m256d B1 = bt_pshufd_pd(vQ2, BT_SHUFFLE(3, 3, 3, 0));
+
+		A1 = A1 * B1;
+
+		__m256d A2 = bt_pshufd_pd(mVec128, BT_SHUFFLE(1, 2, 0, 1));
+		__m256d B2 = bt_pshufd_pd(vQ2, BT_SHUFFLE(2, 0, 1, 1));
+
+		A2 = A2 * B2;
+
+		B1 = bt_pshufd_pd(mVec128, BT_SHUFFLE(2, 0, 1, 2));
+		B2 = bt_pshufd_pd(vQ2, BT_SHUFFLE(1, 2, 0, 2));
+
+		B1 = B1 * B2;	//	A3 *= B3
+
+		mVec128 = bt_splat_pd(mVec128, 3);	//	A0
+		mVec128 = mVec128 * vQ2;	//	A0 * B0
+
+		A1 = A1 + A2;	//	AB12
+		mVec128 = mVec128 - B1;	//	AB03 = AB0 - AB3 
+		A1 = _mm256_xor_pd(A1, vPPPM);	//	change sign of the last element
+		mVec128 = mVec128 + A1;	//	AB03 + AB12
 
 #elif defined(BT_USE_NEON)     
 
@@ -331,6 +372,14 @@ public:
 		vd = _mm_add_ss(vd, t);
 		
         return _mm_cvtss_f32(vd);
+
+#elif defined BT_USE_SIMD_VECTOR3 && defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		__m256d xy = _mm256_mul_pd(mVec128, q.mVec128);
+		__m256d temp = _mm256_hadd_pd(xy, xy);
+		__m128d hi128 = _mm256_extractf128_pd(temp, 1);
+		__m128d dotproduct = _mm_add_pd(_mm256_castpd256_pd128(temp), hi128);
+		return _mm_cvtsd_f64(dotproduct);
+
 #elif defined(BT_USE_NEON)
 		float32x4_t vd = vmulq_f32(mVec128, q.mVec128);
 		float32x2_t x = vpadd_f32(vget_low_f32(vd), vget_high_f32(vd));  
@@ -384,6 +433,18 @@ public:
 		mVec128 = _mm_mul_ps(mVec128, vd);
     
 		return *this;
+
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		__m256d xy = _mm256_mul_pd(mVec128, mVec128);
+		__m256d temp = _mm256_hadd_pd(xy, xy);
+		__m128d hi128 = _mm256_extractf128_pd(temp, 1);
+		__m128d lengthsq_2 = _mm_add_pd(_mm256_castpd256_pd128(temp), hi128);
+		__m128d length_2 = _mm_sqrt_pd(lengthsq_2);
+		__m256d length_4 = _mm256_broadcastsd_pd(length_2);
+		mVec128 = _mm256_div_pd(mVec128, length_4);
+
+		return *this;
+
 #else    
 		return *this /= length();
 #endif
@@ -399,6 +460,10 @@ public:
 		vs = bt_pshufd_ps(vs, 0x00);	//	(S S S S)
 		
 		return btQuaternion(_mm_mul_ps(mVec128, vs));
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		__m256d	vs = _mm256_set1_pd(s);	//	(S S S S)
+
+		return btQuaternion(_mm256_mul_pd(mVec128, vs));
 #elif defined(BT_USE_NEON)
 		return btQuaternion(vmulq_n_f32(mVec128, s));
 #else
@@ -483,6 +548,8 @@ public:
 	{
 #if defined (BT_USE_SSE_IN_API) && defined (BT_USE_SSE)
 		return btQuaternion(_mm_xor_ps(mVec128, vQInv));
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		return btQuaternion(_mm256_xor_pd(mVec128, vQInv));
 #elif defined(BT_USE_NEON)
         return btQuaternion((btSimdFloat4)veorq_s32((int32x4_t)mVec128, (int32x4_t)vQInv));
 #else	
@@ -497,6 +564,8 @@ public:
 	{
 #if defined (BT_USE_SSE_IN_API) && defined (BT_USE_SSE)
 		return btQuaternion(_mm_add_ps(mVec128, q2.mVec128));
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		return btQuaternion(_mm256_add_pd(mVec128, q2.mVec128));
 #elif defined(BT_USE_NEON)
         return btQuaternion(vaddq_f32(mVec128, q2.mVec128));
 #else	
@@ -512,6 +581,8 @@ public:
 	{
 #if defined (BT_USE_SSE_IN_API) && defined (BT_USE_SSE)
 		return btQuaternion(_mm_sub_ps(mVec128, q2.mVec128));
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		return btQuaternion(_mm256_sub_pd(mVec128, q2.mVec128));
 #elif defined(BT_USE_NEON)
         return btQuaternion(vsubq_f32(mVec128, q2.mVec128));
 #else	
@@ -526,6 +597,8 @@ public:
 	{
 #if defined (BT_USE_SSE_IN_API) && defined (BT_USE_SSE)
 		return btQuaternion(_mm_xor_ps(mVec128, btvMzeroMask));
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+		return btQuaternion(_mm256_xor_pd(mVec128, btvMzeroMask));
 #elif defined(BT_USE_NEON)
 		return btQuaternion((btSimdFloat4)veorq_s32((int32x4_t)mVec128, (int32x4_t)btvMzeroMask) );
 #else	
@@ -653,6 +726,37 @@ operator*(const btQuaternion& q1, const btQuaternion& q2)
 	
 	return btQuaternion(A0);
 
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+	__m256d vQ1 = q1.get128();
+	__m256d vQ2 = q2.get128();
+	__m256d A0, A1, B1, A2, B2;
+
+	A1 = bt_pshufd_pd(vQ1, BT_SHUFFLE(0, 1, 2, 0)); // X Y  z x     //      vtrn
+	B1 = bt_pshufd_pd(vQ2, BT_SHUFFLE(3, 3, 3, 0)); // W W  W X     // vdup vext
+
+	A1 = A1 * B1;
+
+	A2 = bt_pshufd_pd(vQ1, BT_SHUFFLE(1, 2, 0, 1)); // Y Z  X Y     // vext 
+	B2 = bt_pshufd_pd(vQ2, BT_SHUFFLE(2, 0, 1, 1)); // z x  Y Y     // vtrn vdup
+
+	A2 = A2 * B2;
+
+	B1 = bt_pshufd_pd(vQ1, BT_SHUFFLE(2, 0, 1, 2)); // z x Y Z      // vtrn vext
+	B2 = bt_pshufd_pd(vQ2, BT_SHUFFLE(1, 2, 0, 2)); // Y Z x z      // vext vtrn
+
+	B1 = B1 * B2;	//	A3 *= B3
+
+	A0 = bt_splat_pd(vQ1, 3);	//	A0
+	A0 = A0 * vQ2;	//	A0 * B0
+
+	A1 = A1 + A2;	//	AB12
+	A0 = A0 - B1;	//	AB03 = AB0 - AB3 
+
+	A1 = _mm256_xor_pd(A1, vPPPM);	//	change sign of the last element
+	A0 = A0 + A1;	//	AB03 + AB12
+
+	return btQuaternion(A0);
+
 #elif defined(BT_USE_NEON)     
 
 	float32x4_t vQ1 = q1.get128();
@@ -736,6 +840,32 @@ operator*(const btQuaternion& q, const btVector3& w)
 	
 	return btQuaternion(A1);
     
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+	__m256d vQ1 = q.get128();
+	__m256d vQ2 = w.get128();
+	__m256d A1, B1, A2, B2, A3, B3;
+
+	A1 = bt_pshufd_pd(vQ1, BT_SHUFFLE(3, 3, 3, 0));
+	B1 = bt_pshufd_pd(vQ2, BT_SHUFFLE(0, 1, 2, 0));
+
+	A1 = A1 * B1;
+
+	A2 = bt_pshufd_pd(vQ1, BT_SHUFFLE(1, 2, 0, 1));
+	B2 = bt_pshufd_pd(vQ2, BT_SHUFFLE(2, 0, 1, 1));
+
+	A2 = A2 * B2;
+
+	A3 = bt_pshufd_pd(vQ1, BT_SHUFFLE(2, 0, 1, 2));
+	B3 = bt_pshufd_pd(vQ2, BT_SHUFFLE(1, 2, 0, 2));
+
+	A3 = A3 * B3;	//	A3 *= B3
+
+	A1 = A1 + A2;	//	AB12
+	A1 = _mm256_xor_pd(A1, vPPPM);	//	change sign of the last element
+	A1 = A1 - A3;	//	AB123 = AB12 - AB3 
+
+	return btQuaternion(A1);
+
 #elif defined(BT_USE_NEON)     
 
 	float32x4_t vQ1 = q.get128();
@@ -819,6 +949,31 @@ operator*(const btVector3& w, const btQuaternion& q)
 	
 	return btQuaternion(A1);
 
+#elif defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+	__m256d vQ1 = w.get128();
+	__m256d vQ2 = q.get128();
+	__m256d A1, B1, A2, B2, A3, B3;
+
+	A1 = bt_pshufd_pd(vQ1, BT_SHUFFLE(0, 1, 2, 0));  // X Y  z x
+	B1 = bt_pshufd_pd(vQ2, BT_SHUFFLE(3, 3, 3, 0));  // W W  W X 
+
+	A1 = A1 * B1;
+
+	A2 = bt_pshufd_pd(vQ1, BT_SHUFFLE(1, 2, 0, 1));
+	B2 = bt_pshufd_pd(vQ2, BT_SHUFFLE(2, 0, 1, 1));
+
+	A2 = A2 * B2;
+
+	A3 = bt_pshufd_pd(vQ1, BT_SHUFFLE(2, 0, 1, 2));
+	B3 = bt_pshufd_pd(vQ2, BT_SHUFFLE(1, 2, 0, 2));
+
+	A3 = A3 * B3;	//	A3 *= B3
+
+	A1 = A1 + A2;	//	AB12
+	A1 = _mm256_xor_pd(A1, vPPPM);	//	change sign of the last element
+	A1 = A1 - A3;	//	AB123 = AB12 - AB3 
+
+	return btQuaternion(A1);
 #elif defined(BT_USE_NEON)     
 
 	float32x4_t vQ1 = w.get128();
@@ -920,6 +1075,8 @@ quatRotate(const btQuaternion& rotation, const btVector3& v)
 	q *= rotation.inverse();
 #if defined BT_USE_SIMD_VECTOR3 && defined (BT_USE_SSE_IN_API) && defined (BT_USE_SSE)
 	return btVector3(_mm_and_ps(q.get128(), btvFFF0fMask));
+#elif defined BT_USE_SIMD_VECTOR3 && defined (BT_USE_SSE_IN_API) && defined (BT_USE_AVX)
+	return btVector3(_mm256_and_pd(q.get128(), btvFFF0fMask));
 #elif defined(BT_USE_NEON)
     return btVector3((float32x4_t)vandq_s32((int32x4_t)q.get128(), btvFFF0Mask));
 #else	

@@ -96,7 +96,7 @@ void	btCompoundShape::updateChildTransform(int childIndex, const btTransform& ne
 		///update the dynamic aabb tree
 		btVector3 localAabbMin,localAabbMax;
 		m_children[childIndex].m_childShape->getAabb(newChildTransform,localAabbMin,localAabbMax);
-		ATTRIBUTE_ALIGNED16(btDbvtVolume)	bounds=btDbvtVolume::FromMM(localAabbMin,localAabbMax);
+		ATTRIBUTE_ALIGNED_DEFAULT(btDbvtVolume)	bounds=btDbvtVolume::FromMM(localAabbMin,localAabbMax);
 		//int index = m_children.size()-1;
 		m_dynamicAabbTree->update(m_children[childIndex].m_node,bounds);
 	}

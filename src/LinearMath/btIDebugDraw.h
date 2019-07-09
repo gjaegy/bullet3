@@ -30,7 +30,7 @@ class	btIDebugDraw
 {
 	public:
 
-	ATTRIBUTE_ALIGNED16(struct) DefaultColors
+	ATTRIBUTE_ALIGNED_DEFAULT(struct) DefaultColors
 	{
 		btVector3	m_activeObject;
 		btVector3	m_deactivatedObject;

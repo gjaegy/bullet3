@@ -48,7 +48,7 @@
 #include "btMultiBodyLink.h"
 class btMultiBodyLinkCollider;
 
-ATTRIBUTE_ALIGNED16(class) btMultiBody 
+ATTRIBUTE_ALIGNED_DEFAULT(class) btMultiBody 
 {
 public:
 

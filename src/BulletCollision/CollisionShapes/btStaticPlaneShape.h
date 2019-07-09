@@ -20,7 +20,7 @@ subject to the following restrictions:
 
 
 ///The btStaticPlaneShape simulates an infinite non-moving (static) collision plane.
-ATTRIBUTE_ALIGNED16(class) btStaticPlaneShape : public btConcaveShape
+ATTRIBUTE_ALIGNED_DEFAULT(class) btStaticPlaneShape : public btConcaveShape
 {
 protected:
 	btVector3	m_localAabbMin;
